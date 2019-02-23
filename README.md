@@ -1,1 +1,2 @@
-# tinyfat
+# tinyFat
+tiny golang cache
