@@ -69,3 +69,25 @@ func TestSugarExpire(t *testing.T) {
   }
 
 }
+
+func TestExist(t *testing.T) {
+  // add an expiring item
+  table := Sugar("testExist")
+  table.Add(k, 0, v)
+  // check if it exist
+  if !table.Exists(k) {
+    t.Error("Error veifying existing data in cache")
+  }
+}
+
+func TestNotFoundAdd(t *testing.T) {
+  table := Sugar("testNotFoundAdd")
+
+  if !table.NotFoundAdd(k, 0, v) {
+    t.Error("Error verifying NotFoundAdd, data not in cache")
+  }
+
+  if table.NotFoundAdd(k, 0, v) {
+    t.Error("Error verifying NotFoundAdd data in cache")
+  }
+}

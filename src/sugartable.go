@@ -169,6 +169,33 @@ func (table *SugarTable) Delete(key interface{}) (*SugarItem, error) {
   return table.deleteInternal(key)
 }
 
+// Exists returns whether an item exists in the cache.Unlike the Value method
+// Exists neither tries to fetch data via lodaData callback nor does it 
+// keep the item alive in the cache.
+func (table *SugarTable) Exists(key interface{}) bool {
+  table.RLock()
+  defer table.RUnlock()
+
+  _, ok := table.items[key]
+  return ok
+}
+
+// NotFoundAdd tests whether an item not found in the cache.Unlike the Exists
+// method this also adds data if the key cloud not be found.
+func (table *SugarTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, data interface{}) bool {
+  table.Lock()
+
+  if _, ok := table.items[key]; ok {
+    table.Unlock()
+    return false
+  }
+
+  item := NewSugarItem(key, lifeSpan, data)
+  table.addInternal(item)
+
+  return true
+}
+
 // Internal logging method for convenience.
 func (table *SugarTable) log(v ...interface{}) {
   if table.logger == nil {
