@@ -31,6 +31,17 @@ type SugarTable struct {
   aboutToDeleteItem func(item *SugarItem)
 }
 
+// Foreach all items
+func (table *SugarTable) Foreach(trans func(key interface{}, item *SugarItem)) {
+  table.RLock()
+  defer table.RUnlock()
+
+  for k, v := range table.items {
+    trans(k,v)
+  }
+}
+
+
 func (table *SugarTable) expirationCheck() {
   table.Lock()
   if table.cleanupTimer != nil {

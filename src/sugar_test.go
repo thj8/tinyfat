@@ -3,6 +3,8 @@ package tiny
 import (
 	"testing"
 	"time"
+  "sync"
+  "sync/atomic"
 )
 
 var (
@@ -90,4 +92,44 @@ func TestNotFoundAdd(t *testing.T) {
   if table.NotFoundAdd(k, 0, v) {
     t.Error("Error verifying NotFoundAdd data in cache")
   }
+}
+
+func TestNotFoundAddConcurreny(t *testing.T) {
+  table := Sugar("TestNotFoundAddConcurreny")
+
+  var finish sync.WaitGroup
+  var added int32
+  var idle int32
+
+  fn := func(id int) {
+    for i := 0; i < 100; i++ {
+      if table.NotFoundAdd(i, 0, i+id) {
+        atomic.AddInt32(&added, 1)
+      } else {
+        atomic.AddInt32(&idle, 1)
+      }
+      time.Sleep(0)
+    }
+    finish.Done()
+  }
+
+  finish.Add(10)
+  go fn(0x0000)
+  go fn(0x1100)
+  go fn(0x2200)
+  go fn(0x3300)
+  go fn(0x4400)
+  go fn(0x5500)
+  go fn(0x6600)
+  go fn(0x7700)
+  go fn(0x8800)
+  go fn(0x9900)
+
+  t.Log(added, idle)
+
+  table.Foreach(func(key interface{}, item *SugarItem) {
+    v, _ := item.Data().(int)
+    k, _ := key.(int)
+    t.Log("%2x   %4x\n", k, v)
+  })
 }
