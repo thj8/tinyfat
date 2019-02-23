@@ -124,12 +124,13 @@ func TestNotFoundAddConcurreny(t *testing.T) {
   go fn(0x7700)
   go fn(0x8800)
   go fn(0x9900)
+  finish.Wait()
 
   t.Log(added, idle)
 
   table.Foreach(func(key interface{}, item *SugarItem) {
     v, _ := item.Data().(int)
     k, _ := key.(int)
-    t.Log("%2x   %4x\n", k, v)
+    t.Logf("%02x   %04x\n", k, v)
   })
 }

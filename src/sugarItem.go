@@ -44,7 +44,6 @@ func NewSugarItem(key interface{}, lifeSpan time.Duration, data interface{}) * S
     aboutToExpire: nil,
     data:       data,
   }
-
 }
 
 // KeepAlive marks an item to be kept for another expireDuration peroid

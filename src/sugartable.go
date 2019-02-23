@@ -41,7 +41,6 @@ func (table *SugarTable) Foreach(trans func(key interface{}, item *SugarItem)) {
   }
 }
 
-
 func (table *SugarTable) expirationCheck() {
   table.Lock()
   if table.cleanupTimer != nil {
