@@ -5,6 +5,7 @@ import (
   "time"
   "sync"
   "sync/atomic"
+  "strconv"
 )
 
 var (
@@ -198,6 +199,36 @@ func TestFlush(t *testing.T) {
   // make sure there is really noting else left in the cache
   if table.Count() != 0 {
     t.Error("Error verifying count of flushed table")
+  }
+}
+
+func TestDataLoader(t *testing.T) {
+  // setup a cache with a configured data-loader
+  table := Sugar("TestDataLoader")
+  table.SetDataLoader(func(key interface{}, args ...interface{}) *SugarItem {
+    var item *SugarItem
+    if key.(string) != "nil" {
+      val := v + key.(string)
+      i := NewSugarItem(key, 500 * time.Millisecond, val)
+      item = i
+    }
+    return item
+  })
+
+  // make sure data-loader works as expected and handles unloadable keys
+  p, err := table.Value("nil")
+  if err == nil || table.Exists("nil") {
+    t.Error("Error validating data loader for nil values")
+  }
+
+  // retrieve a bunch of items via the data-loader
+  for i:=0; i<100; i++ {
+    key := k + strconv.Itoa(i)
+    vp := v + key
+    p, err = table.Value(key)
+    if err != nil || p == nil || p.Data().(string) != vp {
+      t.Error("Error validating data loader")
+    }
   }
 
 }

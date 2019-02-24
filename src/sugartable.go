@@ -41,6 +41,16 @@ func (table *SugarTable) Foreach(trans func(key interface{}, item *SugarItem)) {
   }
 }
 
+// SetDataLoader configures a data-loader callback, which will be called when
+// trying to access a non-existing key.The key and 0...n additional arguments
+// are passed to the callback function.
+func (table *SugarTable) SetDataLoader(f func(interface{}, ...interface{}) *SugarItem) {
+  table.Lock()
+  defer table.Unlock()
+
+  table.loadData = f
+}
+
 func (table *SugarTable) expirationCheck() {
   table.Lock()
   if table.cleanupTimer != nil {
@@ -116,13 +126,24 @@ func (table *SugarTable) addInternal(item *SugarItem) {
 func (table *SugarTable) Value(key interface{}, args ...interface{}) (*SugarItem, error) {
   table.RLock()
   r, ok := table.items[key]
-  // loadData := table.loadData
+  loadData := table.loadData
   table.RUnlock()
 
   if ok {
     // Update access counter and timestamp
     r.KeepAlive()
     return r, nil
+  }
+
+  // Item doesn't exist in cache. Try and fetch it with a data-loader.
+  if loadData != nil {
+    item := loadData(key, args...)
+    if item != nil {
+      table.Add(key, item.lifeSpan, item.data)
+      return item, nil
+    }
+
+    return nil, ErrKeyNotFound
   }
 
   return nil, ErrKeyNotFound
@@ -206,7 +227,7 @@ func (table *SugarTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
   return true
 }
 
-// Flush deletes all item from the cache
+// Flush deletes all item from the cache.
 func (table *SugarTable) Flush() {
   table.Lock()
   defer table.Unlock()
@@ -220,6 +241,7 @@ func (table *SugarTable) Flush() {
   }
 }
 
+// Count returns how many items are currently stored in the cache.
 func (table *SugarTable) Count() int {
   table.RLock()
   defer table.RUnlock()
