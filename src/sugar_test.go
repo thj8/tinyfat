@@ -134,3 +134,25 @@ func TestNotFoundAddConcurreny(t *testing.T) {
     t.Logf("%02x   %04x\n", k, v)
   })
 }
+
+func TestSugarKeepAlive(t *testing.T) {
+  // add an expiring item
+  table := Sugar("TestSugarKeepAlive")
+  p := table.Add(k, 100 * time.Millisecond, v)
+
+  // keep it alive before it expires
+  time.Sleep(50 * time.Millisecond)
+  p.KeepAlive()
+
+  // check it still cache after it was initially supposed to expire
+  time.Sleep(75 * time.Millisecond)
+  if !table.Exists(k) {
+    t.Error("Error keeping item alive")
+  }
+
+  // check it expires eventally
+  time.Sleep(75 * time.Millisecond)
+  if table.Exists(k) {
+    t.Error("Error expiring item after keeping it alive")
+  }
+}
