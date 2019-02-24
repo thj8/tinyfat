@@ -181,3 +181,23 @@ func TestDelete(t *testing.T) {
     t.Error("Excepted error deleting item")
   }
 }
+
+func TestFlush(t *testing.T) {
+  table := Sugar("TestFlush")
+  table.Add(k, 10 * time.Second, v)
+
+  // flush entire table
+  table.Flush()
+
+  // try to retrieve the item
+  p, err := table.Value(k)
+  if p != nil || err == nil {
+    t.Error("Error flushing table")
+  }
+
+  // make sure there is really noting else left in the cache
+  if table.Count() != 0 {
+    t.Error("Error verifying count of flushed table")
+  }
+
+}

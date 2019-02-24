@@ -206,6 +206,27 @@ func (table *SugarTable) NotFoundAdd(key interface{}, lifeSpan time.Duration, da
   return true
 }
 
+// Flush deletes all item from the cache
+func (table *SugarTable) Flush() {
+  table.Lock()
+  defer table.Unlock()
+
+  table.log("Flushing the tale", table.name)
+
+  table.items = make(map[interface{}]*SugarItem)
+  table.cleanupInterval = 0
+  if table.cleanupTimer != nil {
+    table.cleanupTimer.Stop()
+  }
+}
+
+func (table *SugarTable) Count() int {
+  table.RLock()
+  defer table.RUnlock()
+
+  return len(table.items)
+}
+
 // Internal logging method for convenience.
 func (table *SugarTable) log(v ...interface{}) {
   if table.logger == nil {
