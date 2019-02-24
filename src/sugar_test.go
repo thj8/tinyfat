@@ -1,30 +1,30 @@
 package tiny
 
 import (
-	"testing"
-	"time"
+  "testing"
+  "time"
   "sync"
   "sync/atomic"
 )
 
 var (
-	k = "testkey"
-	v = "testvalue"
+  k = "testkey"
+  v = "testvalue"
 )
 
 func TestSugar(t *testing.T) {
-	// add an expiring item after a non-expiring one to
-	// trigger expirationCheck iterating over non-expiring items
-	table := Sugar("testCache")
-	table.Add(k+"_1", 0*time.Second, v)
-	table.Add(k+"_2", 1*time.Second, v)
+   // add an expiring item after a non-expiring one to
+   // trigger expirationCheck iterating over non-expiring items
+   table := Sugar("testCache")
+   table.Add(k+"_1", 0*time.Second, v)
+   table.Add(k+"_2", 1*time.Second, v)
 
-	// check if both items are still there
-	p, err := table.Value(k + "_1")
-	if err != nil || p == nil || p.Data().(string) != v {
-		t.Error("Error retrieving non expiring data from cache", err)
-	}
-  p, err = table.Value(k + "_2")
+   // check if both items are still there
+   p, err := table.Value(k + "_1")
+   if err != nil || p == nil || p.Data().(string) != v {
+   	t.Error("Error retrieving non expiring data from cache", err)
+   }
+   p, err = table.Value(k + "_2")
   if err != nil || p == nil || p.Data().(string) != v {
     t.Error("Errir retrieving data from cache", err)
   }
