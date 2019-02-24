@@ -156,3 +156,28 @@ func TestSugarKeepAlive(t *testing.T) {
     t.Error("Error expiring item after keeping it alive")
   }
 }
+
+func TestDelete(t *testing.T) {
+  table := Sugar("TestDelete")
+  table.Add(k, 0, v)
+
+  // check it really cached
+  p, err := table.Value(k)
+  if err != nil || p == nil || p.Data().(string) != v {
+    t.Error("Error retrieving data from cache", err)
+  }
+
+  // try to delete it
+  table.Delete(k)
+  // check it really deleted
+  p, err = table.Value(k)
+  if err == nil || p != nil {
+    t.Error("Error deleting item")
+  }
+
+  // test err handling
+  _, err = table.Delete(k)
+  if err == nil {
+    t.Error("Excepted error deleting item")
+  }
+}
