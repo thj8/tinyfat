@@ -258,8 +258,60 @@ func TestAccessCount(t *testing.T) {
 
   // check MostAccessed returns the corrent amount of items
   ma = table.MostAccessed(int64(count - 1))
-  t.Log(len(ma))
   if len(ma) != count - 1 {
     t.Error("MostAccessed return incorrect amount or items")
   }
+}
+
+func TestCallbacks(t *testing.T) {
+  var m sync.Mutex
+  addedKey := ""
+  removeKey := ""
+  expired := false
+
+  // setup a cache with AddedItem & SetAboutToDelete handlers configured
+  table := Sugar("TestCallbacks")
+  table.SetAddedItemCallback(func(item *SugarItem) {
+    m.Lock()
+    addedKey = item.Key().(string)
+    t.Log("SetAddedItemCallback run...")
+    m.Unlock()
+  })
+
+  table.SetAboutToDeleteItemCallback(func(item *SugarItem) {
+    m.Lock()
+    removeKey = item.Key().(string)
+    t.Log("SetAboutToDeleteItemCallback run...")
+    m.Unlock()
+  })
+
+  // add an item to the cache and setup its AboutToExpire handler
+  i := table.Add(k, 500 * time.Millisecond, v)
+  i.SetAboutToExpireCallback(func(key interface{}) {
+    m.Lock()
+    expired = true
+    t.Log("SetAboutToExpireCallback run...")
+    m.Unlock()
+  })
+
+  // verify the AddedItem handler works
+  time.Sleep(250 * time.Millisecond)
+  m.Lock()
+  if addedKey != k {
+    t.Error("AddedItem callback not working")
+  }
+  m.Unlock()
+
+  // verify the AboutToDelete handler works
+  time.Sleep(500 * time.Millisecond)
+  m.Lock()
+  if removeKey != k {
+    t.Error("AboutToDeleteItem callback not working:" + k + "_" + removeKey)
+  }
+
+  // verify the AboutToExpire handler works
+  if !expired {
+    t.Error("AboutTOExpire callback not working")
+  }
+  m.Unlock()
 }

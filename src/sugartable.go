@@ -52,6 +52,22 @@ func (table *SugarTable) SetDataLoader(f func(interface{}, ...interface{}) *Suga
   table.loadData = f
 }
 
+// SetAddedItemCallback configures a callback, which will be called every time
+// a new item is added to the cache.
+func (table *SugarTable) SetAddedItemCallback(f func(*SugarItem)) {
+  table.Lock()
+  defer table.Unlock()
+  table.addedItem = f
+}
+
+// SetAboutToDeleteItemCallback configures a callback, which will be called 
+// every time an item is about to be removed from the cache.
+func (table *SugarTable) SetAboutToDeleteItemCallback(f func(*SugarItem)) {
+  table.Lock()
+  defer table.Unlock()
+  table.aboutToDeleteItem = f
+}
+
 func (table *SugarTable) expirationCheck() {
   table.Lock()
   if table.cleanupTimer != nil {
