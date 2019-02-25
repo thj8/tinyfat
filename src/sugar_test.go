@@ -23,7 +23,7 @@ func TestSugar(t *testing.T) {
    // check if both items are still there
    p, err := table.Value(k + "_1")
    if err != nil || p == nil || p.Data().(string) != v {
-   	t.Error("Error retrieving non expiring data from cache", err)
+     t.Error("Error retrieving non expiring data from cache", err)
    }
    p, err = table.Value(k + "_2")
   if err != nil || p == nil || p.Data().(string) != v {
@@ -230,5 +230,36 @@ func TestDataLoader(t *testing.T) {
       t.Error("Error validating data loader")
     }
   }
+}
 
+func TestAccessCount(t *testing.T) {
+  // add 100 items to the cache
+  count := 100
+  table := Sugar("TestAccessCount")
+  for i:=0; i<count; i++ {
+    table.Add(i, 10 * time.Second, v)
+  }
+
+  // never access the first item, access the second item once, the third
+  // twice and so on...
+  for i:=0; i< count; i++ {
+    for j:=0; j<i; j++ {
+      table.Value(i)
+    }
+  }
+
+  // check MostAccessed returns the items in correct order
+  ma := table.MostAccessed(int64(count))
+  for i, item := range ma {
+    if item.Key() != count-1-i {
+      t.Error("MostAccessed items seem to be sorted incorrctly")
+    }
+  }
+
+  // check MostAccessed returns the corrent amount of items
+  ma = table.MostAccessed(int64(count - 1))
+  t.Log(len(ma))
+  if len(ma) != count - 1 {
+    t.Error("MostAccessed return incorrect amount or items")
+  }
 }

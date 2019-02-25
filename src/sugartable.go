@@ -4,6 +4,7 @@ import (
   "sync"
   "time"
   "log"
+  "sort"
 )
 
 // SugarTable is a table within the cache
@@ -249,6 +250,51 @@ func (table *SugarTable) Count() int {
   return len(table.items)
 }
 
+// SugarItemPair maps key to access counter
+type SugarItemPair struct {
+  Key     interface{}
+  AccessCount   int64
+}
+
+// SugarItemPairList is a slice of SugarItemPairs that implements sort.
+// Interface to sort by AccessCount
+type SugarItemPairList []SugarItemPair
+
+func (p SugarItemPairList) Swap(i, j int)   { p[i], p[j] = p[j], p[i] }
+func (p SugarItemPairList) Len() int        { return len(p)}
+func (p SugarItemPairList) Less(i, j int) bool { return p[i].AccessCount > p[j].AccessCount }
+
+// MostAccessed returs the most accessed items in this cache table
+func (table *SugarTable) MostAccessed(count int64) []*SugarItem {
+  table.RLock()
+  defer table.RUnlock()
+
+  p := make(SugarItemPairList, len(table.items))
+  i := 0
+  for k, v := range table.items {
+    p[i] = SugarItemPair{k, v.accessCount}
+    i++
+  }
+  sort.Sort(p)
+
+  var r []*SugarItem
+  c := int64(0)
+  for _, v := range p {
+    if c >= count {
+      break
+    }
+
+    item, ok := table.items[v.Key]
+    if ok {
+      r = append(r, item)
+    }
+    c++
+  }
+
+  return r
+}
+
+
 // Internal logging method for convenience.
 func (table *SugarTable) log(v ...interface{}) {
   if table.logger == nil {
@@ -257,3 +303,4 @@ func (table *SugarTable) log(v ...interface{}) {
 
   table.logger.Println(v...)
 }
+
